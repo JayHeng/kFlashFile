@@ -12,7 +12,7 @@ kFlashFile 从设计上分为三层：
 > * 中间是Adapter层：主要用于适配底层Driver，不同MCU其Driver接口函数可能不同，因此会在这一层做到接口统一。
 > * 最顶层是API层：纯软件逻辑设计来实现文件数据存储，提供了四个非常简易的API。
 
-![](doc/kFlashFile_Framework.png)
+![](doc/kFlashFile_Framework.PNG)
 
 ## 二、设计
 
@@ -40,7 +40,7 @@ kFlashFile 将分配的 Flash 空间分成两个部分，前面是文件数据�
 
 文件头区：区内 Sector 起始地址放一个 Magic 值（4字节），用于标识文件头。然后开始按序记录一份份文件数据在文件数据区里的位置信息（默认用 2byte 去记录一份文件数据的位置）。如果当前 Header Sector 存储满了，便换到下一个 Header Sector 继续记录。
 
-![](doc/kFlashFile_Design0.png)
+![](doc/kFlashFile_Design0.PNG)
 
 ### 2.3 API主参数
 
@@ -136,11 +136,11 @@ kFlashFile 的 API 功能设计思路前面介绍过了，这里介绍具体代�
 
 kflash_file_init() 函数处理流程如下：
 
-![](doc/kFlashFile_Flow_init.png)
+![](doc/kFlashFile_Flow_init.PNG)
 
 如果是首次指定 Flash 空间，那么直接将全部空间擦除干净，并在第一个 Header Sector 中写入初始文件头（Magic + 文件数据位置值 0），即最新有效文件数据在 Flash 空间文件数据区的首地址。
 
-![](doc/kFlashFile_Design_Init.png)
+![](doc/kFlashFile_Design_Init.PNG)
 
 这里有一个特殊的设计，文件数据区其实并不是直接存储用户写入的文件数据，而是将用户文件数据全部按位取反之后再存储进 Flash。这里假定用户数据初始应该是全 0，然后更改主要是将 0 值改为其他值，取反之后，正好对应 Flash 里的 bit1 编程为 bit0（Flash 擦除后是全 0xFF），这样可以充分利用 Flash 覆盖操作以减少擦除次数。
 
@@ -154,22 +154,22 @@ kflash_file_read() 函数最简单了，直接从缓存区 buffer 里获取数�
 
 kflash_file_save() 函数是最核心的函数了，这里逻辑比较复杂，涉及文件数据区全部满了之后的动作，以及文件头区某个 Sector 满了的动作。其处理流程如下：
 
-![](doc/kFlashFile_Flow_Save.png)
+![](doc/kFlashFile_Flow_save.PNG)
 
 当有一个新文件数据要求保存时，首先会判断这个文件能不能在 Flash 中直接覆盖存储，如果能，那就直接覆盖存储，文件头完全不需要更新，这种情况比较简单。
 
-![](doc/kFlashFile_Design_Save0.png)
+![](doc/kFlashFile_Design_Save0.PNG)
 
 如果新文件数据无法直接覆盖存储，那么首先判断文件数据区是否满了，如果上一个文件数据已经存在了文件数据区的最后位置，此时需要擦除数据区第一个 Sector 从头开始存储。如果没有到最后位置，那就按序往下存储。
 
-![](doc/kFlashFile_Design_Save1.png)
+![](doc/kFlashFile_Design_Save1.PNG)
 
 新文件数据已经保存到数据区之后，此时需要处理文件头，记录这个新文件数据的位置。如果文件头区已经记录到当前 Sector 的最后位置，需要切换到下一个 Sector 开始存储，切换存储完新位置后，将之前 Sector 擦除。如果没有，那就按序在当前 Sector 继续记录。
 
-![](doc/kFlashFile_Design_Save2.png)
+![](doc/kFlashFile_Design_Save2.PNG)
 
 #### 3.3.4 deinit()
 
 kflash_file_deinit() 函数也比较简单，就是将文件头区域 Header Sectors 全部擦除即可，文件数据区内容可以不用管，下次重新分配 Flash 时会做擦除。
 
-![](doc/kFlashFile_Design_Deinit.png)
+![](doc/kFlashFile_Design_Deinit.PNG)
